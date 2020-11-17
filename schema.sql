@@ -11,7 +11,7 @@ CREATE TABLE jobs {
     title TEXT NOT NULL,
     salary FLOAT NOT NULL,
     equity FLOAT NOT NULL,
-    date_posted DATE DEFAULT CURRENT_DATE,
+    date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     company_handle TEXT REFERENCES companies ON DELETE CASCADE,
     CHECK (salary > 0),
     CHECK (equity >= 0 AND equity <= 1)
