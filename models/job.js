@@ -8,7 +8,7 @@ class Job {
      * get: get job by id
      * @param {string} id - the handle to get by
      * @return {Object} { id, title, salary, equity, date_posted, 
-     *      company: { handle, name } }
+     *      company: { handle, name, num_employees, description, logo_url } }
      * @throws {ExpressError} with 404 status if no job is found.
      */
 
@@ -19,9 +19,8 @@ class Job {
     /**
      * getAll: get array of all jobs
      * @param {Object} [params] - Optional search parameters.
-     *      Currently supports query, min_salary, max_salary.
-     * @return {Array} [{ id, title, date_posted, company_name }...]
-     * @throws {ExpressError} with 400 status if max_salary > min_salary
+     *      Currently supports query, min_salary, min_equity.
+     * @return {Array} [{ id, title, company_handle }...]
      */
 
     static getAll(params) {
@@ -33,8 +32,7 @@ class Job {
      * @param {Object} jobData - Object with job data.
      *      Required fields: title, salary, equity, company_handle.
      * @return {Object} The newly created job:
-     *      { id, title, salary, equity, date_posted, 
-     *      company: { handle, name } }
+     *      { id, title, salary, equity, date_posted, company_handle }
      * @throws {ExpressError} with 400 status if provided company_handle
      *      doesn't exist, if required data isn't provided, or if equity or
      *      salary fall out of range
@@ -50,8 +48,7 @@ class Job {
      * @param {Object} newData - Object with data to update job with. 
      *      Can update title, salary, equity.
      * @return {Object} the updated job:
-     *      { id, title, salary, equity, date_posted, 
-     *      company: { handle, name } }
+     *      { id, title, salary, equity, date_posted, company_handle }
      * @throws {ExpressError} with 400 status if equity or salary fall out 
      *      of range
      */

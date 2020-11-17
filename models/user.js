@@ -58,7 +58,7 @@ class User {
      * update: update user with provided data
      * @param {string} username - Username of the user to update.
      * @param {Object} newData - Object with data to update user with. 
-     *      Can update username, first_name, last_name, email, photo_url, is_admin.
+     *      Can update username, first_name, last_name, email, photo_url.
      * @return {Object} the updated user:
      *      { username, first_name, last_name, email, photo_url, is_admin }
      * @throws {ExpressError} with 400 status if username or email is

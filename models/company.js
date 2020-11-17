@@ -7,7 +7,8 @@ class Company {
     /**
      * get: get company by handle
      * @param {string} handle - the handle to get by
-     * @return {Object} { handle, name, num_employees, description, logo_url }
+     * @return {Object} { handle, name, num_employees, description, logo_url,
+     *      jobs: [{ id, title, date_posted, salary, equity }...] }
      * @throws {ExpressError} with 404 status if no company is found.
      */
 
@@ -19,7 +20,7 @@ class Company {
      * getAll: get array of all companies
      * @param {Object} [params] - Optional search parameters.
      *      Currently supports query, min_employees, max_employees.
-     * @return {Array} [{ handle, name, num_employees, logo_url }...]
+     * @return {Array} [{ handle, name }...]
      * @throws {ExpressError} with 400 status if max_employees < min_employees
      */
 
