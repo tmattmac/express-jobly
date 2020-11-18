@@ -12,6 +12,7 @@ const router = express.Router();
 /**
  * GET /companies
  * Request body requires _token
+ * Optional query parameters: search, min_employees, max_employees
  * Returns { companies: [{ handle, name }...]}
  */
 
@@ -85,7 +86,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
 });
 
 /**
- * PATCH /companies
+ * PATCH /companies/:handle
  * Required fields: _token
  * Optional fields: handle, name, num_employees, description, logo_url
  * Returns { company: { handle, name, num_employees, description, logo_url } }
@@ -117,7 +118,7 @@ router.patch('/:handle', requireAdmin, async (req, res, next) => {
 /**
  * DELETE /companies/:handle
  * Required fields: _token
- * Returns { message: "Deleted company" }
+ * Returns { message: "Company deleted" }
  * Throws 404 if handle not found
  */
 

@@ -18,20 +18,20 @@ beforeEach(async () => {
             ('test_1', 'Test Company 1', 50, 'First test company', 'a.jpg'),
             ('test_2', 'Test Company 2', 100, 'Second test company', 'b.jpg'),
             ('test_3', 'Test Company 3', 150, 'Third test company', 'c.jpg'),
-            ('test_4', 'Test Company 4', 200, 'Fourth test company' 'd.jpg'),
-            ('test_5', 'Outlier Company', 100, 'Fifth test company' 'e.jpg')
+            ('test_4', 'Test Company 4', 200, 'Fourth test company', 'd.jpg'),
+            ('test_5', 'Outlier Company', 100, 'Fifth test company', 'e.jpg')
     `);
     const { rows } = await db.query(`
         INSERT INTO jobs (title, salary, equity, company_handle)
         VALUES
-            ('Software Developer I', 60000, 0.1, test_1),
-            ('Software Developer II', 80000, 0.15, test_1),
-            ('Database Administrator', 65000, 0.1, test_1),
-            ('COBOL Developer', 150000, 0.15, test_1),
-            ('Software Developer I', 65000, 0.05, test_2),
-            ('Systems Analyst II', 85000, 0.1, test_2),
-            ('Software Developer II', 90000, 0.2, test_3)
-        RETURNING id
+            ('Software Developer I', 60000, 0.1, 'test_1'),
+            ('Software Developer II', 80000, 0.15, 'test_1'),
+            ('Database Administrator', 65000, 0.1, 'test_1'),
+            ('COBOL Developer', 150000, 0.15, 'test_1'),
+            ('Software Developer I', 65000, 0.05, 'test_2'),
+            ('Systems Analyst II', 85000, 0.1, 'test_2'),
+            ('Software Developer II', 90000, 0.2, 'test_3')
+        RETURNING *
     `);
     jobs = rows;
 
@@ -57,11 +57,11 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(7);
         expect(res.body.jobs).toEqual(
-            expect.arrayContaining({
+            expect.arrayContaining([{
                 id: expect.any(Number),
                 title: 'Software Developer I',
                 company_handle: 'test_1'
-            })
+            }])
         );
     });
 
@@ -82,9 +82,9 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(4);
         expect(res.body.jobs).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({ title: 'COBOL Developer' })
-            )
+            ])
         );
 
         res = await request(app)
@@ -94,9 +94,9 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(1);
         expect(res.body.jobs).toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({ title: 'COBOL Developer' })
-            )
+            ])
         );
     });
     
@@ -108,11 +108,11 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(4);
         expect(res.body.jobs).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     title: 'Software Developer I'
                 })
-            )
+            ])
         );
     });
     
@@ -124,11 +124,11 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(3);
         expect(res.body.jobs).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     title: 'Database Administrator'
                 })
-            )
+            ])
         );
     });
     
@@ -144,17 +144,17 @@ describe('GET /jobs', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.jobs).toHaveLength(1);
         expect(res.body.jobs).toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     company_handle: 'test_3'
                 })
-            )
+            ])
         );
     });
 
     test('returns empty list if no companies found', async () => {
         const res = await request(app)
-            .get(`/companies`)
+            .get(`/jobs`)
             .query({ min_equity: 0.25 })
             .send({ _token });
         expect(res.statusCode).toBe(200);
@@ -169,7 +169,7 @@ describe('GET /jobs/:id', () => {
             .get(`/jobs/${job.id}`)
             .send({ _token });
         expect(res.statusCode).toBe(200);
-        expect(res.body.job).toBe(
+        expect(res.body.job).toEqual(
             expect.objectContaining({
                 id: job.id,
                 title: job.title,
@@ -189,7 +189,7 @@ describe('GET /jobs/:id', () => {
 });
 
 describe('POST /jobs', () => {
-    test('only admins can access route', () => {
+    test('only admins can access route', async () => {
         let _token = tokens.u1;
         let res = await request(app)
             .post(`/jobs`)
@@ -224,6 +224,7 @@ describe('POST /jobs', () => {
             title: 'Test Job Title',
             salary: 20000,
             equity: 0.5,
+            date_posted: expect.anything(),
             company_handle: 'test_1',
         });
         
@@ -232,7 +233,7 @@ describe('POST /jobs', () => {
             .get(`/jobs/${jobId}`)
             .send({ _token });
         expect(res.statusCode).toBe(200);
-        expect(res.body.job).toBe(
+        expect(res.body.job).toEqual(
             expect.objectContaining({
                 id: jobId,
                 title: 'Test Job Title',
@@ -301,7 +302,7 @@ describe('POST /jobs', () => {
 });
 
 describe('PATCH /jobs/:id', () => {
-    test('only admins can access route', () => {
+    test('only admins can access route', async () => {
         let _token = tokens.u1;
         const job = jobs[0];
         let res = await request(app)
@@ -429,7 +430,7 @@ describe('PATCH /jobs/:id', () => {
 });
 
 describe('DELETE /jobs/:id', () => {
-    test('only admins can access route', () => {
+    test('only admins can access route', async () => {
         let _token = tokens.u1;
         const job = jobs[0];
         let res = await request(app)

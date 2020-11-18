@@ -32,11 +32,11 @@ class Company {
             SELECT c.handle, c.name, c.num_employees, c.description, c.logo_url,
                 JSON_AGG(
                     JSON_BUILD_OBJECT(
-                        'id', j.id,
-                        'title', j.title,
-                        'date_posted', j.date_posted,
-                        'salary', j.salary,
-                        'equity', j.equity
+                        'id',           j.id,
+                        'title',        j.title,
+                        'date_posted',  j.date_posted,
+                        'salary',       j.salary,
+                        'equity',       j.equity
                     )
                 ) AS jobs
             FROM companies c
@@ -103,20 +103,21 @@ class Company {
             RETURNING handle, name, num_employees, description, logo_url
         `;
         const values = [
-            companyData.handle || null,
-            companyData.name || null,
-            companyData.num_employees || null,
-            companyData.description || null,
-            companyData.logo_url || null
+            companyData.handle,
+            companyData.name,
+            companyData.num_employees,
+            companyData.description,
+            companyData.logo_url
         ];
 
         try {
             const { rows: [company] } = await db.query(query, values);
             return company;
         } catch (e) {
-            if (e.code === '23505') {
+            if (e.code === '23505') { // unique key violation
                 throw new ExpressError(
-                    'Company name or handle already in use', 400);
+                    'Company name or handle already in use', 400
+                );
             }
             throw e;
         }
@@ -145,7 +146,7 @@ class Company {
             }
             return company;
         } catch (e) {
-            if (e.code === '23505') {
+            if (e.code === '23505') { // unique key violation
                 throw new ExpressError(
                     'Company name or handle already in use', 400);
             }
