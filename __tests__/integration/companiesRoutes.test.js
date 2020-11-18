@@ -16,19 +16,19 @@ beforeEach(async () => {
             ('test_1', 'Test Company 1', 50, 'First test company', 'a.jpg'),
             ('test_2', 'Test Company 2', 100, 'Second test company', 'b.jpg'),
             ('test_3', 'Test Company 3', 150, 'Third test company', 'c.jpg'),
-            ('test_4', 'Test Company 4', 200, 'Fourth test company' 'd.jpg'),
-            ('test_5', 'Outlier Company', 100, 'Fifth test company' 'e.jpg')
+            ('test_4', 'Test Company 4', 200, 'Fourth test company', 'd.jpg'),
+            ('test_5', 'Outlier Company', 250, 'Fifth test company', 'e.jpg')
     `);
     await db.query(`
         INSERT INTO jobs (title, salary, equity, company_handle)
         VALUES
-            ('Software Developer I', 60000, 0.1, test_1),
-            ('Software Developer II', 80000, 0.15, test_1),
-            ('Database Administrator', 65000, 0.1, test_1),
-            ('COBOL Developer', 150000, 0.15, test_1),
-            ('Software Developer I', 65000, 0.05, test_2),
-            ('Systems Analyst II', 85000, 0.1, test_2),
-            ('Software Developer II', 90000, 0.2, test_3)
+            ('Software Developer I', 60000, 0.1, 'test_1'),
+            ('Software Developer II', 80000, 0.15, 'test_1'),
+            ('Database Administrator', 65000, 0.1, 'test_1'),
+            ('COBOL Developer', 150000, 0.15, 'test_1'),
+            ('Software Developer I', 65000, 0.05, 'test_2'),
+            ('Systems Analyst II', 85000, 0.1, 'test_2'),
+            ('Software Developer II', 90000, 0.2, 'test_3')
     `);
 
     tokens.admin = jwt.sign({ username: 'admin', is_admin: true }, SECRET_KEY);
@@ -53,10 +53,10 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(5);
         expect(res.body.companies).toEqual(
-            expect.arrayContaining({
+            expect.arrayContaining([{
                 handle: 'test_1',
                 name: 'Test Company 1'
-            })
+            }])
         );
     });
 
@@ -77,9 +77,9 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(4);
         expect(res.body.companies).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({ name: 'Outlier Company' })
-            )
+            ])
         );
 
         res = await request(app)
@@ -89,9 +89,9 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(1);
         expect(res.body.companies).toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({ name: 'Outlier Company' })
-            )
+            ])
         );
     });
     
@@ -103,11 +103,11 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(3);
         expect(res.body.companies).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     name: 'Test Company 1'
                 })
-            )
+            ])
         );
     });
     
@@ -119,11 +119,11 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(3);
         expect(res.body.companies).not.toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     name: 'Test Company 4'
                 })
-            )
+            ])
         );
     });
     
@@ -139,11 +139,11 @@ describe('GET /companies', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.companies).toHaveLength(1);
         expect(res.body.companies).toEqual(
-            expect.arrayContaining(
+            expect.arrayContaining([
                 expect.objectContaining({
                     name: 'Test Company 4'
                 })
-            )
+            ])
         );
     });
     
@@ -241,7 +241,7 @@ describe('POST /companies', () => {
                 _token
             });
         expect(res.statusCode).toBe(201);
-        expect(res.body).toEqual({
+        expect(res.body.company).toEqual({
             handle: 'test_6',
             name: 'Test Company 6',
             num_employees: 500,
@@ -331,6 +331,11 @@ describe('PATCH /companies/:handle', () => {
             name: 'Test Company 6',
             num_employees: 500,
             description: 'Sixth test company',
+            jobs: expect.arrayContaining([
+                expect.objectContaining({
+                    title: 'Database Administrator'
+                })
+            ]),
             logo_url: 'f.jpg',
         });
     });
@@ -344,7 +349,7 @@ describe('PATCH /companies/:handle', () => {
                 _token
             });
         expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual({
+        expect(res.body.company).toEqual({
             handle: 'test_1',
             name: 'Test Company 1',
             num_employees: 500,
