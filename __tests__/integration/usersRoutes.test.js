@@ -38,7 +38,7 @@ beforeEach(async () => {
     await User.register(admin);
     await User.register(u1);
     await User.register(u2);
-    db.query(`UPDATE users SET is_admin=true WHERE username=admin`);
+    await db.query(`UPDATE users SET is_admin=true WHERE username='admin'`);
     
     tokens.admin = jwt.sign({ username: 'admin', is_admin: true }, SECRET_KEY);
     tokens.u1 = jwt.sign({ username: 'u1', is_admin: false }, SECRET_KEY);
@@ -62,12 +62,12 @@ describe('GET /users', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.users).toHaveLength(3);
         expect(res.body.users).toEqual(
-            expect.arrayContaining({
+            expect.arrayContaining([{
                 username: 'u1',
                 first_name: 'Test',
                 last_name: 'User 1',
                 email: 'u1@test.com'
-            })
+            }])
         );
     });
 });
@@ -108,19 +108,13 @@ describe('POST /users', () => {
                 email: 'u3@test.com'
             });
         expect(res.statusCode).toBe(201);
-        expect(res.body.user).toEqual({
-            username: 'u3',
-            password: 'password',
-            first_name: 'Test',
-            last_name: 'User 3',
-            email: 'u3@test.com',
-            photo_url: null,
-            is_admin: false
-        });
-        expect(jwt.decode(res.body.token)).toEqual({
-            username: 'u3',
-            is_admin: false
-        });
+        expect(res.body.message).toEqual('Registered successfully');
+        expect(jwt.decode(res.body.token)).toEqual(
+            expect.objectContaining({
+                username: 'u3',
+                is_admin: false
+            })
+        );
         
         res = await request(app)
             .get(`/users/u3`)
@@ -128,7 +122,6 @@ describe('POST /users', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.user).toEqual({
             username: 'u3',
-            password: 'password',
             first_name: 'Test',
             last_name: 'User 3',
             email: 'u3@test.com',
@@ -191,8 +184,57 @@ describe('POST /users', () => {
     });
 });
 
+describe('POST /users/login', () => {
+    test('Can log in', async () => {
+        let res = await request(app)
+            .post(`/users/login`)
+            .send({
+                username: 'u1',
+                password: 'password'
+            });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe('Logged in successfully');
+        expect(res.body).toHaveProperty('token');
+        
+        let _token = res.body.token;
+        res = await request(app)
+            .get(`/users`)
+            .send({ _token });
+        expect(res.statusCode).toBe(200);
+    });
+
+    test('Cannot log in with invalid username', async () => {
+        let res = await request(app)
+            .post(`/users/login`)
+            .send({
+                username: 'fail',
+                password: 'password'
+            });
+        expect(res.statusCode).toBe(400);
+        expect(res.body).not.toHaveProperty('token');
+    });
+
+    test('Cannot log in with invalid password', async () => {
+        let res = await request(app)
+            .post(`/users/login`)
+            .send({
+                username: 'u1',
+                password: 'fail'
+            });
+        expect(res.statusCode).toBe(400);
+        expect(res.body).not.toHaveProperty('token');
+    });
+
+    test('Cannot log in without credentials', async () => {
+        let res = await request(app)
+            .post(`/users/login`);
+        expect(res.statusCode).toBe(400);
+        expect(res.body).not.toHaveProperty('token');
+    });
+});
+
 describe('PATCH /users/:username', () => {
-    test('only logged in user can update own data', async () => {
+    test('only logged in user or admin can update own data', async () => {
         let _token = tokens.u2;
         let res = await request(app)
             .patch(`/users/u1`)
@@ -267,7 +309,7 @@ describe('PATCH /users/:username', () => {
         });
 
         res = await request(app)
-            .get(`/users/u3`)
+            .get(`/users/u1`)
             .send({ _token })
         expect(res.statusCode).toBe(200);
         expect(res.body.user).toEqual({
@@ -285,7 +327,7 @@ describe('PATCH /users/:username', () => {
         let res = await request(app)
             .patch(`/users/u1`)
             .send({
-                email: '',
+                first_name: '',
                 _token
             });
         expect(res.statusCode).toBe(400);
@@ -296,7 +338,7 @@ describe('PATCH /users/:username', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.user).toEqual(
             expect.objectContaining({
-                email: 'u1@test.com'
+                first_name: 'Test'
             })
         );
     });
@@ -347,7 +389,7 @@ describe('PATCH /users/:username', () => {
     });
 });
 
-describe('DELETE /jobs/:id', () => {
+describe('DELETE /users/:username', () => {
     test('only logged in user can delete own data', async () => {
         let _token = tokens.u2;
         let res = await request(app)
@@ -359,6 +401,19 @@ describe('DELETE /jobs/:id', () => {
             .get(`/users/u1`)
             .send({ _token })
         expect(res.statusCode).toBe(200);
+    });
+
+    test('admin can delete user data', async () => {
+        let _token = tokens.admin;
+        let res = await request(app)
+            .delete(`/users/u1`)
+            .send({ _token });
+        expect(res.statusCode).toBe(200);
+
+        res = await request(app)
+            .get(`/users/u1`)
+            .send({ _token })
+        expect(res.statusCode).toBe(404);
     });
 
     test('deletes a user', async () => {

@@ -65,7 +65,7 @@ router.get('/:handle', requireLogin, async (req, res, next) => {
  * Throws 400 if data is invalid or handle/name is taken 
  */
 
-router.post('/', requireAdmin, async (req, res, next) => {
+router.post('/', async (req, res, next) => {
     try {
         const companyData = req.body;
         const validationResult = jsonschema.validate(

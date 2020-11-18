@@ -1,6 +1,7 @@
 const db = require('../db');
 const ExpressError = require('../helpers/expressError');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
+const parsePgError = require('../helpers/parsePgError');
 const bcrypt = require('bcrypt');
 const { BCRYPT_HASHING_ROUNDS } = require('../config');
 
@@ -64,14 +65,14 @@ class User {
      *      password is incorrect
      */
 
-    static authenticate(username, password) {
+    static async authenticate(username, password) {
         const query = `
             SELECT username, password, is_admin
             FROM users
             WHERE username = $1
         `;
         
-        const { rows: [user] } = db.query(query, [username]);
+        const { rows: [user] } = await db.query(query, [username]);
         if (user && await bcrypt.compare(password, user.password)) {
             delete user.password;
             return user;
@@ -89,7 +90,7 @@ class User {
      * @throws {ExpressError} with 404 status if no user is found
      */
 
-    static get(username) {
+    static async get(username) {
         const query = `
             SELECT username, first_name, last_name, email, photo_url, is_admin
             FROM users
@@ -110,13 +111,13 @@ class User {
      * @return {Array} [{ username, first_name, last_name, email }...]
      */
 
-    static getAll() {
+    static async getAll() {
         const query = `
             SELECT username, first_name, last_name, email
             FROM users
         `;
 
-        const rows = await db.query(query);
+        const { rows } = await db.query(query);
         return rows;
     }
 
@@ -132,7 +133,7 @@ class User {
      *      in use.
      */
 
-    static update(username, newData) {
+    static async update(username, newData) {
         const { query, values } = sqlForPartialUpdate(
             'users', newData, 'username', username
         );
@@ -142,6 +143,7 @@ class User {
             if (!user) {
                 throw new ExpressError(`User '${username}' not found`, 404);
             }
+            delete user.password;
             return user;
         } catch (e) {
             if (e.code === '23505') { // unique key violation
@@ -158,7 +160,7 @@ class User {
      * @throws {ExpressError} with 404 status if no user is found.
      */
     
-    static delete(username) {
+    static async delete(username) {
         const query = `
             DELETE FROM users WHERE username = $1 RETURNING username
         `;

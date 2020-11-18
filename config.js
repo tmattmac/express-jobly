@@ -13,15 +13,19 @@ const PORT = +process.env.PORT || 3000;
 // - else: 'jobly'
 
 let DB_URI;
+let BCRYPT_HASHING_ROUNDS;
 
 if (process.env.NODE_ENV === "test") {
   DB_URI = "jobly-test";
+  BCRYPT_HASHING_ROUNDS = 1;
 } else {
   DB_URI = process.env.DATABASE_URL || "jobly";
+  BCRYPT_HASHING_ROUNDS = 12;
 }
 
 module.exports = {
   SECRET_KEY,
   PORT,
-  DB_URI
+  DB_URI,
+  BCRYPT_HASHING_ROUNDS
 };
