@@ -2,6 +2,7 @@ const db = require('../db');
 const buildWhereClause = require('../helpers/buildWhereClause');
 const ExpressError = require('../helpers/expressError');
 const sqlForPartialUpdate = require('../helpers/partialUpdate');
+const parsePgError = require('../helpers/parsePgError');
 
 /**
  * Class for database operations related to companies.
@@ -115,9 +116,7 @@ class Company {
             return company;
         } catch (e) {
             if (e.code === '23505') { // unique key violation
-                throw new ExpressError(
-                    'Company name or handle already in use', 400
-                );
+                this.handleUniqueKeyViolation(e, companyData);
             }
             throw e;
         }
@@ -147,8 +146,7 @@ class Company {
             return company;
         } catch (e) {
             if (e.code === '23505') { // unique key violation
-                throw new ExpressError(
-                    'Company name or handle already in use', 400);
+                this.handleUniqueKeyViolation(e, newData);
             }
             throw e;
         }
@@ -170,6 +168,23 @@ class Company {
             throw new ExpressError(`Company '${handle}' not found`, 404);
         }
         return handle;
+    }
+
+    /**
+     * Throws an error with a human-readable message for unique key violations
+     */
+    static handleUniqueKeyViolation(err, data) {
+        const key = parsePgError(err);
+        let errorMsg;
+        if (key === 'handle') {
+            errorMsg =
+                `Company with handle '${data.handle}' already exists`
+        }
+        else if (key === 'name') {
+            errorMsg =
+                `Company with name '${data.name}' already exists`
+        }
+        throw new ExpressError(errorMsg, 400);
     }
 }
 

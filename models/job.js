@@ -100,7 +100,8 @@ class Job {
         } catch (e) {
             if (e.code === '23503') { // foreign key violation
                 throw new ExpressError(
-                    `Company handle '${jobData.handle}' doesn't exist`, 400
+                    `Company handle '${jobData.company_handle}' doesn't exist`,
+                    400
                 );
             }
             throw e;
